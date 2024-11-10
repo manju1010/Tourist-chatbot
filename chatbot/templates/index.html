@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <title>Paris Travel Guide Chatbot</title>
+    <style>
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #f3f3f3; background-image: url("https://assets.cntraveller.in/photos/60ba0fdce4ae824c61ea9220/16:9/w_1024%2Cc_limit/GettyImages-559699279.jpg"); background-size: cover; background-repeat: no-repeat; }
+        #chat-container { width: 50%; max-width: 600px; margin-top: 20px; background-color: #f3f3f3; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
+        #chat-box { padding: 20px; height: 400px; overflow-y: auto; background-color: #ffffff; }
+        .message { display: flex; align-items: flex-end; margin: 10px 0; }
+        .user-message, .bot-message { max-width: 75%; padding: 10px; border-radius: 15px; }
+        .user-message { background-color: #6a0dad; color: #ffffff; align-self: flex-end; margin-left: auto; }
+        .bot-message { background-color: #eeeeee; color: #333333; align-self: flex-start; }
+        .user-icon, .bot-icon { width: 40px; height: 40px; border-radius: 50%; margin: 0 10px; }
+        .user-icon { background-color:#007bff ; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: bold;}
+        .bot-icon { background-color: #007bff; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        #input-container { display: flex; padding: 10px; background-color: #ffffff; border-top: 1px solid #ddd; }
+        #user-input { flex-grow: 1; padding: 10px; font-size: 1rem; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        #send-button { padding: 10px 20px; margin-left: 10px; background-color: #6a0dad; color: #ffffff; border: none; border-radius: 20px; cursor: pointer; }
+        #send-button:hover { background-color: #5e09a7; }
+        #title{ color: white}
+    </style>
+</head>
+<body>
+    <h1 id="title">Paris Travel Guide Chatbot</h1>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Ask about landmarks in Paris..." autofocus>
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chat-box");
+        const userInput = document.getElementById("user-input");
+        const sendButton = document.getElementById("send-button");
+
+        function appendMessage(content, className, isUser = false) {
+            const messageContainer = document.createElement("div");
+            messageContainer.className = `message ${className}`;
+            
+            const icon = document.createElement("div");
+            icon.className = isUser ? "user-icon" : "bot-icon";
+            icon.innerText = isUser ? "User" : "Bot"; // You can replace this with actual images if desired
+            
+            const message = document.createElement("div");
+            message.className = className;
+            message.innerText = content;
+            
+            if (isUser) {
+                messageContainer.appendChild(message);
+                messageContainer.appendChild(icon);
+            } else {
+                messageContainer.appendChild(icon);
+                messageContainer.appendChild(message);
+            }
+            
+            chatBox.appendChild(messageContainer);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        sendButton.addEventListener("click", () => {
+            const message = userInput.value.trim();
+            if (message) {
+                appendMessage(message, "user-message", true);
+                userInput.value = "";
+
+                // Send message to Flask backend
+                fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    appendMessage(data.response, "bot-message");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    appendMessage("There was an error. Please try again.", "bot-message");
+                });
+            }
+        });
+
+        // Send message on pressing Enter
+        userInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendButton.click();
+        });
+    </script>
+</body>
+</html>
